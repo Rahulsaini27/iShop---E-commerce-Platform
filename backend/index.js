@@ -24,7 +24,9 @@ app.use("/order", OrderRouter);
 
 app.use("/admin", AdminRouter); // Add this line for the admin routes
 
-
+app.get("/", (req, res) => {
+    res.send("Your iShop backend server is running properly 🚀");
+});
 mongoose.connect(
     "mongodb+srv://rahulsaini42854:zxcvbnm2003@cluster-course.b7mzy.mongodb.net/",
     {

@@ -33,7 +33,7 @@ const Dashboard = () => {
     const [error, setError] = useState(null);
 
     // Your API base URL
-    const API_BASE_URL = 'http://localhost:5000/admin'; // Adjust if your URL is different
+    const API_BASE_URL = 'https://i-shop-e-commerce-backend.vercel.app/admin'; // Adjust if your URL is different
 
     useEffect(() => {
         const fetchData = async () => {
