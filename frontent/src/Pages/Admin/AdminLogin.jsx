@@ -8,7 +8,7 @@ import { login } from '../../Reducers/UserSlice';
 import { FiBox } from 'react-icons/fi';
 
 const AdminLogin = () => {
-    const { API_BASE_URL, openToast } = useContext(Context);
+    const { API_BASE_URL, openToast ,USER_BASE_URL } = useContext(Context);
     const [error, setError] = useState('');
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -21,13 +21,14 @@ const AdminLogin = () => {
             password: e.target.password.value,
         };
 
-        axios.post(`${API_BASE_URL}/admin/login`, data)
+        axios.post(`${API_BASE_URL + USER_BASE_URL + "/login"}`, data)
             .then((success) => {
                 if (success.data.status === 1) {
+                                        navigate("/admin"); // Navigate to the admin dashboard
+
                     // Dispatch the unified login action with the user object from the API
-                    dispatch(login({ user: success.data.user }));
+                    // dispatch(login({ user: success.data.user }));
                     openToast("Admin login successful!", "success");
-                    navigate("/admin"); // Navigate to the admin dashboard
                 }
             })
             .catch((error) => {

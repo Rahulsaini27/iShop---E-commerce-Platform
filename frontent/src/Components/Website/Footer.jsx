@@ -29,9 +29,9 @@ const Footer = () => {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">Support</h3>
                         <ul className="space-y-2">
-                            <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                            <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
-                            <li><Link to="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
+                            <li><Link to="/" className="hover:text-white transition-colors">Contact Us</Link></li>
+                            <li><Link to="/" className="hover:text-white transition-colors">FAQ</Link></li>
+                            <li><Link to="/" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
                         </ul>
                     </div>
 
@@ -43,10 +43,10 @@ const Footer = () => {
                             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-r-md">Go</button>
                         </form>
                         <div className="flex space-x-4 mt-6">
-                            <a href="#" className="hover:text-white"><FaFacebook size={24} /></a>
-                            <a href="#" className="hover:text-white"><FaTwitter size={24} /></a>
-                            <a href="#" className="hover:text-white"><FaInstagram size={24} /></a>
-                            <a href="#" className="hover:text-white"><FaLinkedin size={24} /></a>
+                            <a href="/" className="hover:text-white"><FaFacebook size={24} /></a>
+                            <a href="/" className="hover:text-white"><FaTwitter size={24} /></a>
+                            <a href="/" className="hover:text-white"><FaInstagram size={24} /></a>
+                            <a href="/" className="hover:text-white"><FaLinkedin size={24} /></a>
                         </div>
                     </div>
                 </div>
