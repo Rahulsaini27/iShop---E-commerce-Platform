@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/plugin-transform-numeric-separator": "^7.27.1",
+    "@babel/plugin-transform-optional-chaining": "^7.27.1",
     "@material-tailwind/react": "^2.1.8",
     "@reduxjs/toolkit": "^2.2.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -18,7 +20,7 @@
     "react-razorpay": "^2.0.1",
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.21.3",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^0.0.0",
     "react-select": "^5.8.0",
     "react-slick": "^0.30.2",
     "react-toastify": "^10.0.4",
