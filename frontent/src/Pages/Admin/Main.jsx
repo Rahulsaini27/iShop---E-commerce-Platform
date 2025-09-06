@@ -5,11 +5,15 @@ import { Outlet } from 'react-router-dom';
 
 const Main = () => {
     return (
-        <div className='grid grid-cols-5'>
+        <div className='flex h-screen bg-gray-100 font-sans'>
             <SideBar />
-            <div className='col-span-4'>
+            <div className='flex-1 flex flex-col overflow-hidden'>
                 <Header />
-                <Outlet />
+                <main className='flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8'>
+                    <div className="container mx-auto">
+                         <Outlet />
+                    </div>
+                </main>
             </div>
         </div>
     );

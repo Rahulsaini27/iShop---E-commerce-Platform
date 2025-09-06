@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaShoppingCart } from "react-icons/fa";
 import { Context } from '../../Context/MainContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../Reducers/cartSlice';
@@ -12,64 +12,64 @@ const ProductBox = ({ _id, name, image, price, discount_percent, discount_price,
 
     const addToDbCart = (pId) => {
         if (user.data != null) {
-            axios.post(API_BASE_URL + CART_BASE_URL + "/add-to-cart", { user_id: user.data._id })
-                .then(
-                    (success) => {
-
-                    }
-                ).catch(
-                    (error) => {
-
-                    }
-                )
-        } else {
-
+            axios.post(`${API_BASE_URL}${CART_BASE_URL}/add-to-cart`, { 
+                user_id: user.data._id, 
+                pId: pId, 
+                qty: 1 
+            });
         }
-    }
+    };
+
+    const handleAddToCart = () => {
+        dispatcher(addToCart({ price: discount_price, pId: _id, qty: 1 }));
+        addToDbCart(_id);
+    };
 
     return (
-        <div>
-
-
+        <div className="group relative flex flex-col h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div className="aspect-w-4 aspect-h-3 w-full overflow-hidden">
+                <img 
+                    src={API_BASE_URL + productImageUrl + image} 
+                    className='w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105' 
+                    alt={name}
+                />
+            </div>
             
-            <div className='border pt-6 m-3 cursor-pointer shadow-lg flex flex-col justify-center items-center rounded-lg'>
-                <img src={API_BASE_URL + productImageUrl + image} className='w-[236px] h-[160px] hover:scale-90' />
-                <div className='mt-[30px] font-semibold text-[16px]'>{name}</div>
+            <div className='p-4 flex flex-col flex-grow'>
+                <h3 className='font-semibold text-gray-800 text-lg truncate'>{name}</h3>
+                
+                <div className="my-3">
+                    <Stars yellow={rating} />
+                </div>
 
-                <Stars yellow={rating} />
-                {
-                    discount_percent == 0 ?
-                        <span className='text-[red]'>₹ {discount_price}</span>
-
-                        : <div>
-                            <p>  {discount_percent} % off</p>
-                            <div className=' flex gap-4 my-2'>
-                                <span className='text-[red]'>₹{discount_price}</span>
-                                <span className='text-[#C1C8CE] line-through'>₹ {price}</span>
-                            </div>
+                <div className="mt-auto">
+                    {discount_percent > 0 ? (
+                        <div className='flex items-baseline gap-3'>
+                            <span className='text-2xl font-bold text-red-600'>₹{discount_price}</span>
+                            <span className='text-md text-gray-500 line-through'>₹{price}</span>
                         </div>
-                }
-                <span onClick={() => {
-                    dispatcher(addToCart({ price: discount_price, pId: _id, qty: 1 }));
-                    addToDbCart(_id)
-                }
-                } className='w-[50%] my-2 mx-auto rounded-xl  text-white py-1.5 bg-yellow-400 text-center'>Add To Cart</span>
-
+                    ) : (
+                        <span className='text-2xl font-bold text-gray-800'>₹{discount_price}</span>
+                    )}
+                </div>
             </div>
 
+            <button 
+                onClick={handleAddToCart}
+                className='flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-semibold py-3 transition-all duration-300 transform translate-y-full group-hover:translate-y-0'
+            >
+                <FaShoppingCart />
+                Add To Cart
+            </button>
         </div>
     );
 }
 
 function Stars({ yellow }) {
-    let starts = [];
-    for (var i = 1; i <= 5; i++) {
-        if (i <= yellow) {
-            starts.push(<FaStar key={i} className='text-[#FFC600]' />);
-        } else {
-            starts.push(<FaStar key={i} className='text-[#C1C8CE]' />);
-        }
-    }
-    return <div className='text-[16px] flex mt-5'>{starts}</div>
+    const stars = Array.from({ length: 5 }, (_, i) => (
+        <FaStar key={i} className={i < yellow ? 'text-yellow-400' : 'text-gray-300'} />
+    ));
+    return <div className='text-lg flex gap-1'>{stars}</div>;
 }
+
 export default ProductBox;

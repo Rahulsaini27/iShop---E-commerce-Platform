@@ -1,385 +1,266 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Context } from '../../Context/MainContext';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import useRazorpay from 'react-razorpay';
+import { Context } from '../../Context/MainContext';
 import { emptyCart } from '../../Reducers/cartSlice';
-import useRazorpay from 'react-razorpay'
-
 
 const Checkout = () => {
     const [Razorpay] = useRazorpay();
     const { products, productImageUrl, API_BASE_URL, fetchProduct, CART_ORDER_URL } = useContext(Context);
+    
+    // Selectors and Hooks
     const user = useSelector(store => store.user);
     const cart = useSelector(store => store.cart);
     const navigator = useNavigate();
     const dispatcher = useDispatch();
 
+    // State Management
     const [cartProduct, setCartProduct] = useState([]);
+    const [formData, setFormData] = useState({
+        first_name: '',
+        last_name: '',
+        Street: '',
+        Locality: '',
+        City: '',
+        State: '',
+        pin: '',
+        phone: '',
+        email: '',
+        payment_mode: '2', // Default to 'Online'
+    });
+    const [processing, setProcessing] = useState(false);
 
-    useEffect(
-        () => {
-            fetchProduct()
-        }, []
-    )
-
-
-    useEffect(
-        () => {
-            const data = [];
-            for (let p of products) {
-                for (let c of cart.data) {
-                    if (c.pId == p._id) {
-                        data.push(
-                            {
-                                ...c,
-                                ...p
-                            }
-                        )
-                    }
-                }
-            }
-            setCartProduct(data);
-        }, [cart, products]
-    )
-
-    const deatailsFormHandler = (e) => {
-        e.preventDefault();
-        const shipping_details = {
-            first_name: e.target.first_name.value,
-            last_name: e.target.last_name.value,
-            Street: e.target.Street.value,
-            Locality: e.target.Locality.value,
-            City: e.target.City.value,
-            State: e.target.State.value,
-            pin: e.target.pin.value,
-            phone: e.target.phone.value,
-            email: e.target.email.value,
-
+    // Effect to pre-fill form data from Redux store
+    useEffect(() => {
+        if (user.data) {
+            setFormData(prev => ({
+                ...prev,
+                first_name: user.data.name || '',
+                Street: user.data.street || '',
+                Locality: user.data.locality || '',
+                City: user.data.city || '',
+                pin: user.data.pin || '',
+                phone: user.data.phone || '',
+                email: user.data.email || '',
+            }));
         }
-        const payment_mode = parseInt(e.target.radio_option.value);
-        const order_total = cart.total + (payment_mode == 1 ? 50 : 0);
-        axios.post(API_BASE_URL + CART_ORDER_URL + "/place-order",
-            {
-                user_id: user.data,
+    }, [user.data]);
+
+    // Effect to fetch products on component mount
+    useEffect(() => {
+        fetchProduct();
+    }, []);
+
+    // Effect to combine cart and product data
+    useEffect(() => {
+        if (products.length > 0 && cart.data.length > 0) {
+            const data = products.flatMap(p =>
+                cart.data
+                    .filter(c => c.pId === p._id)
+                    .map(c => ({ ...c, ...p }))
+            );
+            setCartProduct(data);
+        } else {
+            setCartProduct([]);
+        }
+    }, [cart.data, products]);
+
+    // Handlers
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const deatailsFormHandler = async (e) => {
+        e.preventDefault();
+
+        if (!user.data || !user.data._id) {
+            alert("You must be logged in to place an order.");
+            return;
+        }
+        if (cartProduct.length === 0) {
+            alert("Your cart is empty.");
+            return;
+        }
+
+        setProcessing(true);
+        const shipping_details = { ...formData };
+        delete shipping_details.payment_mode;
+
+        const payment_mode = parseInt(formData.payment_mode);
+        const order_total = cart.total + (payment_mode === 1 ? 50 : 0);
+
+        try {
+            const response = await axios.post(`${API_BASE_URL}${CART_ORDER_URL}/place-order`, {
+                user_id: user.data._id,
                 shipping_details,
                 order_total,
                 payment_mode,
-                product_details: (cartProduct),
-            })
-            .then(
-                (success) => {
-                    if (success.data.status == 1) {
+                product_details: cartProduct,
+            });
 
-                        if (payment_mode == 1) {
-                            dispatcher(emptyCart())
-                            // const order = success.data.order_id;
-                            // + {order}
-                            navigator("/thank-you/" + success.data.order_id)
-                        } else {
-                            initRazorpayOrder(
-                                success.data.order_id,
-                                order_total,
-                                success.data.razor_order.id,
-                                shipping_details
-                            )
-                        }
-                    }
+            const { data } = response;
+            if (data.status === 1) {
+                if (payment_mode === 1) { // COD
+                    dispatcher(emptyCart());
+                    navigator(`/thank-you/${data.order_id}`);
+                } else { // Online Payment
+                    initRazorpayOrder(
+                        data.order_id,
+                        order_total,
+                        data.razor_order,
+                        shipping_details
+                    );
                 }
-            ).catch(
-                (error) => {
-                }
-            )
-    }
+            } else {
+                alert(data.msg || "Failed to place order. Please try again.");
+                setProcessing(false);
+            }
+        } catch (error) {
+            const errorMessage = error.response?.data?.msg || "A network error occurred. Please try again.";
+            alert(errorMessage);
+            setProcessing(false);
+        }
+    };
 
-    const initRazorpayOrder = (
-        order_id, amount, razorpay_order_id, userData) => {
-
+    const initRazorpayOrder = (order_id, amount, razorpayOrder, userData) => {
         const options = {
-            key: "rzp_test_vNoztmT3ky59rZ", // Enter the Key ID generated from the Dashboard
-            amount: amount * 100, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+            key: "rzp_test_R6I1rshvL0HKs9", // Your public Razorpay Key ID
+            amount: amount * 100,
             currency: "INR",
             name: "IShop",
-            description: "HELLO THIS IS ISHOP RAZORPAY ",
-            image: "http://localhost:3000/image/logo.svg.svg",
-            order_id: razorpay_order_id,
-            //This is a sample Order ID. Pass the `id` obtained in the response of createOrder().
-
-            handler: function (razorpay_response) {
-                axios.post(API_BASE_URL + CART_ORDER_URL + "/payment-success", { order_id, razorpay_response })
-                    .then(
-                        (success) => {
-                            if (success.data.status == 1) {
-                                dispatcher(emptyCart())
-                                navigator("/thank-you/" + success.data.order_id)
-                            } else {
-
-                            }
-                        }
-                    ).catch(
-                        (error) => {
-                        }
-                    )
+            description: "Thank you for your purchase",
+            image: "/logo.svg", // Path from public folder
+            order_id: razorpayOrder.id,
+            handler: async (razorpay_response) => {
+                try {
+                    await axios.post(`${API_BASE_URL}${CART_ORDER_URL}/payment-success`, { order_id, razorpay_response });
+                    dispatcher(emptyCart());
+                    navigator(`/thank-you/${order_id}`);
+                } catch (error) {
+                    alert("Payment successful, but failed to update order status. Please contact support.");
+                }
             },
             prefill: {
-                name: userData.name,
+                name: `${userData.first_name} ${userData.last_name}`,
                 email: userData.email,
                 contact: userData.phone,
             },
-
-            theme: {
-                color: "#FF4252",
-            },
+            theme: { color: "#FF4252" },
         };
 
         const rzp1 = new Razorpay(options);
 
-        rzp1.on("payment.failed", function (response) {
-
-            const razorpay_response = {
-                razorpay_order_id: response.error.metadata.order_id,
-                razorpay_payment_id: response.error.metadata.payment_id,
-            }
-
-            axios.post(API_BASE_URL + CART_ORDER_URL + "/failed", { order_id, razorpay_response })
-                .then(
-                    (success) => {
-                        if (success.data.status == 1) {
-                            navigator("/Failed")
-
-                        } else {
-
-                        }
-                    }
-                ).catch(
-                    (error) => {
-                    }
-                )
-            // alert(response.error.code);
-            // alert(response.error.description);
-            // alert(response.error.source);
-            // alert(response.error.step);
-            // alert(response.error.reason);
-            // alert(response.error.metadata.order_id);
-            // alert(response.error.metadata.payment_id);
+        rzp1.on("payment.failed", async (response) => {
+            await axios.post(`${API_BASE_URL}${CART_ORDER_URL}/payment-failed`, { 
+                order_id, 
+                razorpay_response: {
+                    razorpay_order_id: response.error.metadata.order_id,
+                    razorpay_payment_id: response.error.metadata.payment_id,
+                }
+            });
+            navigator("/");
         });
 
         rzp1.open();
+        setProcessing(false);
+    };
 
+    const shippingCost = formData.payment_mode === '1' ? 50 : 0;
+    const totalAmount = cart.total + shippingCost;
 
-
-
-    }
     return (
-        <div className='max-w-[1280px]  mx-auto'>
-            <div className="bg-white p-8">
-                <div className="  mb-4">
-                    <div className="grid grid-cols-6  gap-9 ">
-                        <div className="col-span-4  ">
-                            <div className="max-w-[100%] mx-auto p-4">
-                                <h2 className="text-xl font-semibold mb-6">Your Details:</h2>
-                                <form onSubmit={deatailsFormHandler} className="space-y-4">
-                                    <div>
-                                        <label htmlFor="full-name" className="block text-sm font-medium mb-1">
-                                            Full Name
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="First Name"
-                                                type="text"
-                                                required
-                                                name='first_name'
-                                                defaultValue={user.data?.name}
-                                            />
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="Last Name"
-
-                                                type="text"
-                                                required
-                                                name='last_name'
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1" htmlFor="address">
-                                            Address
-                                        </label>
-                                        <div className='grid grid-cols-2 gap-4 mt-2'>
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="Floor no / Street Address"
-                                                type="text"
-                                                defaultValue={user.data?.street}
-
-                                                required
-                                                name='Street'
-
-                                            />
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="Locality / Area"
-                                                type="text"
-                                                required
-                                                name='Locality'
-                                                defaultValue={user.data?.locality}
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4 mt-2">
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="City"
-                                                type="text"
-                                                required
-                                                name='City'
-                                                defaultValue={user.data?.city}
-
-
-                                            />
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="State "
-                                                type="text"
-                                                required
-                                                name='State'
-                                            />
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="PIN Code"
-                                                type="number"
-                                                name='pin'
-                                                required
-                                                defaultValue={user.data?.pin}
-
-                                                minLength={6}  // Minimum length set to 6 digits
-                                                maxLength={8}  // Maximum length set to 8 digits
-                                            />
-                                        </div>
-
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-2">
-                                        <div>
-                                            <label
-                                                className="block text-sm font-medium mb-1"
-                                                htmlFor="phone-number"
-                                            >
-                                                Phone Number
-                                            </label>
-                                            <input
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="9876543219"
-                                                required
-                                                defaultValue={user.data?.phone}
-
-                                                name='phone'
-                                                type='number'
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-1" htmlFor="email">
-                                                E-mail
-                                            </label>
-                                            <input
-                                                required
-                                                defaultValue={user.data?.email}
-
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="ex: email@yahoo.com"
-                                                type="email"
-                                                name='email'
-                                            /></div>
-                                    </div>
-                                    <div>
-                                        <h2 className="block text-sm font-medium py-2" >
-                                            Mode of Payment
-                                        </h2>
-                                        <div className="max-w-xs flex gap-10">
-                                            <div className="mb-4">
-                                                <label className="block text-gray-700 font-bold " htmlFor="option1">
-                                                    <input
-                                                        className="mr-2 max-w-[60px] leading-tight"
-                                                        type="radio"
-                                                        id="option1"
-                                                        name="radio_option"
-                                                        defaultValue="1"
-                                                    />
-                                                    <span className="text-sm">COD (₹ + 50 Extra)</span>
-                                                </label>
-                                            </div>
-                                            <div className="mb-4">
-                                                <label className="block text-gray-700 font-bold " htmlFor="option2">
-                                                    <input
-                                                        className="mr-2 max-w-[60px] leading-tight"
-                                                        type="radio"
-                                                        id="option2"
-                                                        name="radio_option"
-                                                        defaultValue="2"
-                                                        defaultChecked
-
-                                                    />
-                                                    <span className="text-sm">Online</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    <button
-                                        className=" bg-zinc-700 text-white hover:bg-yellow-200 hover:text-black rounded-md text-sm font-medium   px-4 py-2"
-                                        type="submit"
-                                    >
-                                        Submit
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <div className=' col-span-2 '>
-                            <h2 className="text-xl font-semibold mb-4">YOUR CART</h2>
-
-                            {
-                                cartProduct.map(
-                                    (pro, i) => {
-                                        return (
-                                            <div key={i} className="flex flex-col mb-4">
-                                                <div >
-                                                    <div className="flex justify-between px-4 items-center">
-                                                        <img src={API_BASE_URL + productImageUrl + pro.image} width={100} height={64} alt='' />
-                                                        <div className=" flex flex-col justify-center items-center text-sm ">
-                                                            <div>{pro.name}</div>
-                                                            <div className="font-medium">₹ {pro.discount_price} x {pro.qty}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-                                            </div>
-                                        )
-                                    }
-                                )
-                            }
-                            <div className="text-sm">
-                                <div className="flex justify-between mb-1">
-                                    <span>Item Subtotal</span>
-                                    <span>₹ {cart.total}</span>
-                                </div>
-
-                                <div className="flex justify-between mb-1">
-                                    <span>Shipping</span>
-                                    <span>₹ 0,00 </span>
-                                </div>
-                                <hr className="my-2" />
-                                <div className="flex justify-between font-medium">
-                                    <span>Total</span>
-                                    <span>₹ {cart.total}</span>
+        <div className='max-w-7xl mx-auto p-4 sm:p-6 lg:p-8'>
+            <div className="bg-white p-4 sm:p-8 shadow-md rounded-lg">
+                <form onSubmit={deatailsFormHandler} className="grid grid-cols-12 gap-4 md:gap-9">
+                    {/* Shipping Details Section */}
+                    <div className="col-span-12 md:col-span-7 lg:col-span-8">
+                        <h2 className="text-2xl font-semibold mb-6 border-b pb-4">Shipping Details</h2>
+                        <div className="space-y-4">
+                            {/* Input fields... */}
+                            {/* Full Name */}
+                             <div>
+                                <label className="block text-sm font-medium mb-1">Full Name</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <input className="input-style" placeholder="First Name" type="text" required name='first_name' value={formData.first_name} onChange={handleInputChange} />
+                                    <input className="input-style" placeholder="Last Name" type="text" required name='last_name' value={formData.last_name} onChange={handleInputChange} />
                                 </div>
                             </div>
+                            {/* Address */}
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Address</label>
+                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2'>
+                                    <input className="input-style" placeholder="Street Address" type="text" required name='Street' value={formData.Street} onChange={handleInputChange} />
+                                    <input className="input-style" placeholder="Locality / Area" type="text" required name='Locality' value={formData.Locality} onChange={handleInputChange} />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                                    <input className="input-style" placeholder="City" type="text" required name='City' value={formData.City} onChange={handleInputChange} />
+                                    <input className="input-style" placeholder="State" type="text" required name='State' value={formData.State} onChange={handleInputChange} />
+                                    <input className="input-style" placeholder="PIN Code" type="number" name='pin' required value={formData.pin} onChange={handleInputChange} minLength={6} maxLength={6} />
+                                </div>
+                            </div>
+                            {/* Contact */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                                    <input className="input-style" placeholder="10-digit mobile number" required name='phone' type='tel' pattern="[0-9]{10}" value={formData.phone} onChange={handleInputChange} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">E-mail</label>
+                                    <input required className="input-style" placeholder="example@email.com" type="email" name='email' value={formData.email} onChange={handleInputChange} />
+                                </div>
+                            </div>
+                            {/* Payment Mode */}
+                            <div>
+                                <h2 className="block text-lg font-medium py-2 mt-4 border-b">Mode of Payment</h2>
+                                <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:gap-10">
+                                    <label className="flex items-center text-gray-700 font-bold cursor-pointer">
+                                        <input className="mr-2 h-4 w-4" type="radio" name="payment_mode" value="1" checked={formData.payment_mode === '1'} onChange={handleInputChange} />
+                                        <span>COD (+ ₹50 Extra)</span>
+                                    </label>
+                                    <label className="flex items-center text-gray-700 font-bold cursor-pointer">
+                                        <input className="mr-2 h-4 w-4" type="radio" name="payment_mode" value="2" checked={formData.payment_mode === '2'} onChange={handleInputChange} />
+                                        <span>Online</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button className="bg-zinc-800 text-white hover:bg-zinc-900 rounded-md text-sm font-medium px-6 py-3 disabled:bg-zinc-400 disabled:cursor-not-allowed" type="submit" disabled={processing}>
+                                {processing ? 'Processing...' : `Pay ₹${totalAmount.toFixed(2)}`}
+                            </button>
                         </div>
                     </div>
-                </div>
+
+                    {/* Cart Summary Section */}
+                    <div className='col-span-12 md:col-span-5 lg:col-span-4 bg-gray-50 p-6 rounded-lg h-fit'>
+                        <h2 className="text-xl font-semibold mb-4 border-b pb-4">Your Cart Summary</h2>
+                        <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                            {cartProduct.length > 0 ? cartProduct.map((pro) => (
+                                <div key={pro._id} className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <img src={`${API_BASE_URL}${productImageUrl}${pro.image}`} width={64} height={64} alt={pro.name} className="rounded-md border" />
+                                        <div className="ml-4 text-sm">
+                                            <div className='font-semibold'>{pro.name}</div>
+                                            <div className="text-gray-600">₹ {pro.discount_price} x {pro.qty}</div>
+                                        </div>
+                                    </div>
+                                    <div className="font-semibold">₹ {pro.discount_price * pro.qty}</div>
+                                </div>
+                            )) : <p className="text-center text-gray-500">Your cart is empty.</p>}
+                        </div>
+                        {cartProduct.length > 0 && (
+                            <div className="text-sm mt-6 border-t pt-4 space-y-2">
+                                <div className="flex justify-between"><span>Subtotal</span><span>₹ {cart.total.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Shipping</span><span>₹ {shippingCost.toFixed(2)}</span></div>
+                                <hr className="my-2" />
+                                <div className="flex justify-between font-bold text-lg"><span>Total</span><span>₹ {totalAmount.toFixed(2)}</span></div>
+                            </div>
+                        )}
+                    </div>
+                </form>
             </div>
         </div>
-
     );
 }
 

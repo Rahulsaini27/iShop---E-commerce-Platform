@@ -10,11 +10,9 @@ const UserSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true
-
         },
         profileImage: {
             type: String,
-
         },
         contactNumber: {
             type: String,
@@ -32,6 +30,12 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
+        // ADD THIS ROLE FIELD
+        role: {
+            type: String,
+            enum: ['user', 'admin'],
+            default: 'user'
+        },
         address: [{
             type: String
         }]
@@ -39,7 +43,6 @@ const UserSchema = new mongoose.Schema(
     {
         timestamps: true
     }
-
 );
 
 // Create user model

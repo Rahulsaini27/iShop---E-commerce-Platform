@@ -22,6 +22,12 @@ import { lsLogin } from "./Reducers/UserSlice";
 import Checkout from "./Pages/Website/Checkout";
 import ThankYou from "./Pages/Website/ThankYou";
 
+
+
+import AdminLogin from "./Pages/Admin/AdminLogin";
+import ProtectedRouteAdmin from "./Components/Admin/ProtectedRouteAdmin";
+import ViewOrders from "./Pages/Admin/orders/View";
+import ViewTransactions from "./Pages/Admin/transactions/View";
 function App() {
   const dispatcher = useDispatch();
 
@@ -71,8 +77,15 @@ function App() {
         path: "sign-up",
         element: <SignUp />
       },
+
+       {
+        path: "/admin/login",
+        element: <AdminLogin />
+    },
       {
         path: "/admin",
+              element: <ProtectedRouteAdmin />, // This component protects all children
+
         element: <AdminMain />,
         children: [
           {
@@ -105,7 +118,9 @@ function App() {
           , {
             path: "color/edit/:id",
             element: <ColorEdit />
-          }
+          },
+           { path: "orders", element: <ViewOrders /> },
+            { path: "transactions", element: <ViewTransactions /> }
         ]
       },
     ]

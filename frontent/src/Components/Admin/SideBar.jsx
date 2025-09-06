@@ -1,87 +1,61 @@
 import React from 'react';
-import { MdCategory } from "react-icons/md";
+import { MdCategory, MdDashboard, MdPayment, MdShoppingBasket } from "react-icons/md";
 import { FaProductHunt } from "react-icons/fa";
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { IoIosColorPalette } from "react-icons/io";
-
+import { FiBox, FiLogOut } from 'react-icons/fi';
+import { useDispatch } from 'react-redux';
+import { adminLogout } from '../../Reducers/UserSlice';
 
 const SideBar = () => {
+    const location = useLocation();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const menuItems = [
+        { path: '/admin', icon: <MdDashboard className="w-5 h-5" />, name: 'Dashboard' },
+        { path: '/admin/orders', icon: <MdShoppingBasket className="w-5 h-5" />, name: 'Orders' },
+        { path: '/admin/transactions', icon: <MdPayment className="w-5 h-5" />, name: 'Transactions' },
+        { path: '/admin/category', icon: <MdCategory className="w-5 h-5" />, name: 'Categories' },
+        { path: '/admin/color', icon: <IoIosColorPalette className="w-5 h-5" />, name: 'Colors' },
+        { path: '/admin/product', icon: <FaProductHunt className="w-5 h-5" />, name: 'Products' }
+    ];
+
+    const handleLogout = () => {
+        dispatch(adminLogout());
+        navigate('/admin/login');
+    };
+
     return (
-        <div className=''>
-            <aside className="bg-gradient-to-br from-gray-800 to-gray-900  inset-0 z-50 h-[100vh] max-w-[306px]  duration-300 ">
-                <div className="relative border-b border-white/20">
-                    <p className="flex items-center gap-4 py-2 px-16" >
-                        <h6 className="block antialiased tracking-normal font-sans text-3xl font-semibold leading-relaxed text-white">
-                            IShop
-                        </h6>
-                    </p>
-                </div>
-                <div className="m-4">
-                    <ul className="mb-4 flex flex-col gap-1">
-                        <li>
-                            <Link to={'/admin'}>
-                                <button
-                                    className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-                                    type="button"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        aria-hidden="true"
-                                        className="w-5 h-5 text-inherit"
-                                    >
-                                        <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-                                        <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
-                                    </svg>
-                                    <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
-                                        dashboard
-                                    </p>
-                                </button>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={'/admin/category'}>
-                                <button
-                                    className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-                                    type="button"
-                                >
-                                    <MdCategory className="w-5 h-5 text-inherit" />
-                                    <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
-                                        Category
-                                    </p>
-                                </button>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={'/admin/color'}>
-                                <button
-                                    className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-                                    type="button"
-                                >
-                                    <IoIosColorPalette className="w-5 h-5 text-inherit" />
-                                    <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
-                                        Color
-                                    </p>
-                                </button>
-                            </Link>
-                        </li>
-                        <li>
-                        <Link to={'/admin/product'}>
-                                <button
-                                    className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-                                    type="button"
-                                >
-                                    <FaProductHunt className="w-5 h-5 text-inherit" />
-                                    <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
-                                        Product                                    </p>
-                                </button>
+        <aside className="w-64 bg-slate-900 text-gray-300 flex flex-col h-screen">
+            <div className="flex items-center justify-center gap-3 py-6 border-b border-slate-800">
+                <FiBox className="text-indigo-400" size={30}/>
+                <h6 className="font-sans text-2xl font-bold leading-relaxed text-white">IShop</h6>
+            </div>
+            <nav className="flex-1 px-4 py-4 overflow-y-auto">
+                <ul className="space-y-2">
+                    {menuItems.map((item) => {
+                        const isActive = location.pathname === item.path;
+                        return (
+                            <li key={item.name}>
+                                <Link to={item.path}>
+                                    <button className={`font-sans font-semibold text-sm py-3 rounded-lg w-full flex items-center gap-4 px-4 capitalize transition-all duration-300 ${isActive ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-400 hover:bg-slate-800 hover:text-white'}`}>
+                                        {item.icon}
+                                        <span>{item.name}</span>
+                                    </button>
                                 </Link>
-                        </li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </nav>
+            <div className="p-4 border-t border-slate-800">
+                 <button onClick={handleLogout} className="font-sans font-semibold text-sm py-3 rounded-lg w-full flex items-center gap-4 px-4 capitalize transition-all duration-300 text-gray-400 hover:bg-red-500 hover:text-white">
+                    <FiLogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
     );
 }
 

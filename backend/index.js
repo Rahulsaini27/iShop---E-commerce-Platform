@@ -8,7 +8,7 @@ const ProductRouter = require('./routers/product');
 const UserRouter = require('./routers/user');
 const CartRouter = require('./routers/cart');
 const OrderRouter = require('./routers/order');
-
+const AdminRouter = require('./routers/admin'); // Import the admin router
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -22,11 +22,11 @@ app.use("/cart", CartRouter);
 app.use("/order", OrderRouter);
 
 
+app.use("/admin", AdminRouter); // Add this line for the admin routes
 
 
-// app.use("public/image/category", express.static('public/image/category'))
 mongoose.connect(
-    "mongodb://localhost:27017",
+    "mongodb+srv://rahulsaini42854:zxcvbnm2003@cluster-course.b7mzy.mongodb.net/",
     {
         dbName: "ishop",
     }
