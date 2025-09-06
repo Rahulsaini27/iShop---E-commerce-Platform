@@ -8,9 +8,10 @@ import { MdEdit, MdDelete } from "react-icons/md";
 const View = () => {
     const { colors, fetchColor, openToast, API_BASE_URL, COLOR_BASE_URL } = useContext(Context);
 
+
     useEffect(() => {
         fetchColor();
-    }, []);
+    }, [fetchColor]);
 
     const changeStatus = (id, new_status) => {
         axios.patch(`${API_BASE_URL}${COLOR_BASE_URL}/change-status/${id}/${new_status}`)

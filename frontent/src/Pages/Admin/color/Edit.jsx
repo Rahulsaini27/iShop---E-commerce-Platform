@@ -8,64 +8,55 @@ const Edit = () => {
     const { API_BASE_URL, COLOR_BASE_URL, openToast, fetchColor } = useContext(Context);
     const [color, setColor] = useState(null);
 
-
     const formSubmitHandler = (event) => {
+        event.preventDefault(); 
         const name = event.target.name.value;
-        const color = event.target.color.value;
-        axios.patch(API_BASE_URL + COLOR_BASE_URL + "/update/", { name, color })
+        const colorCode = event.target.color.value;
+        
+
+        axios.patch(API_BASE_URL + COLOR_BASE_URL + "/update/" + id, { name, color: colorCode })
             .then(
                 (success) => {
                     if (success.data.status) {
                         openToast(success.data.msg, "success");
                         fetchColor();
                     } else {
-                        openToast(success.data.msg, "error")
+                        openToast(success.data.msg, "error");
                     }
                 }
             ).catch(
                 (error) => {
-                    openToast(error.message, "error")
+                    openToast(error.message || "An error occurred", "error");
                 }
-            )
+            );
+    };
 
 
-    }
+    useEffect(() => {
 
-    useEffect(
-        () => {
-            if (id != undefined) {
-                // console.log(API_BASE_URL + COLOR_BASE_URL + "/" + id)
-                axios.get(API_BASE_URL + COLOR_BASE_URL + "/" + id)
-                    .then(
-                        (success) => {
-                            //    console.log(success.data.status)
-                            if (success.data.status) {
-                                setColor(success.data.colors)
-                                console.log("hyy")
-
-
-                            } else {
-                                openToast(success.data.msg, "error")
-                            }
+        if (id !== undefined) {
+            axios.get(API_BASE_URL + COLOR_BASE_URL + "/" + id)
+                .then(
+                    (success) => {
+                        if (success.data.status) {
+                            setColor(success.data.colors);
+                        } else {
+                            openToast(success.data.msg, "error");
                         }
-                    ).catch(
-                        (error) => {
-
-                        }
-                    )
-            } else {
-
-            }
-        },
-        []
-    )
+                    }
+                ).catch(
+                    (error) => {
+                        openToast(error.message || "Could not fetch color data", "error");
+                    }
+                );
+        }
+    }, [id, API_BASE_URL, COLOR_BASE_URL, openToast]);
 
     return (
         <div>
             <div className=' mx-auto bg-white shadow  rounded-xl'>
                 <div className='flex justify-between items-center text-3xl px-5 py-2'>
                     <h1>Edit Color</h1>
-
                 </div><hr />
                 <form onSubmit={formSubmitHandler} className='p-4' >
                     <div className=' grid grid-cols-2'>
@@ -75,10 +66,9 @@ const Edit = () => {
                             </label>
                             <input
                                 onChange={(e) => {
-                                    setColor({ ...color, name: e.target.value })
-                                    // console.log(e.target.value)
+                                    setColor({ ...color, name: e.target.value });
                                 }}
-                                value={color?.name}
+                                value={color?.name || ''}
                                 placeholder='  Enter Color'
                                 type="text"
                                 id="name"
@@ -92,11 +82,9 @@ const Edit = () => {
                             </label>
                             <input
                                 onChange={(e) => {
-                                    console.log(e.target.value)
-                                    setColor({ ...color, code: e.target.value })
+                                    setColor({ ...color, code: e.target.value });
                                 }}
-                                value={color?.code}
-
+                                value={color?.code || '#000000'}
                                 type="color"
                                 id="color"
                                 name="color"
@@ -105,7 +93,7 @@ const Edit = () => {
                         </div>
                     </div>
 
-                    <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600" >
+                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600" >
                         Submit
                     </button>
                 </form>

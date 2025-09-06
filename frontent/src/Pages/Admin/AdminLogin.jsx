@@ -1,18 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import { Context } from '../../Context/MainContext';
-// We now use the unified 'login' action
-import { login } from '../../Reducers/UserSlice';
 import { FiBox } from 'react-icons/fi';
 
 const AdminLogin = () => {
-    const { API_BASE_URL, openToast ,USER_BASE_URL } = useContext(Context);
+    const { API_BASE_URL, openToast, USER_BASE_URL } = useContext(Context);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    const dispatch = useDispatch();
 
+    
     const handleLogin = (e) => {
         e.preventDefault();
         setError('');
@@ -21,13 +18,11 @@ const AdminLogin = () => {
             password: e.target.password.value,
         };
 
-        axios.post(`${API_BASE_URL + USER_BASE_URL + "/login"}`, data)
+        axios.post(`${API_BASE_URL + USER_BASE_URL}/login`, data)
             .then((success) => {
                 if (success.data.status === 1) {
-                                        navigate("/admin"); // Navigate to the admin dashboard
-
-                    // Dispatch the unified login action with the user object from the API
-                    // dispatch(login({ user: success.data.user }));
+                    navigate("/admin"); 
+                    
                     openToast("Admin login successful!", "success");
                 }
             })
@@ -38,7 +33,6 @@ const AdminLogin = () => {
             });
     };
     
-    // ... JSX remains the same
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">

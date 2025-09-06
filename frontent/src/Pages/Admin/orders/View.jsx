@@ -1,30 +1,29 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Context } from '../../../Context/MainContext';
-import { useSelector } from 'react-redux';
 
 const ViewOrders = () => {
     const { API_BASE_URL, openToast } = useContext(Context);
-    const { token } = useSelector(store => store.user);
+
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-   useEffect(() => {
-    // Remove the headers object from the axios call
-    axios.get(`${API_BASE_URL}/admin/orders`)
-    .then(response => {
-        if (response.data.status === 1) {
-            setOrders(response.data.orders);
-        } else {
-            openToast(response.data.msg, 'error');
-        }
-        setLoading(false);
-    })
-    .catch(error => {
-        openToast(error.response?.data?.msg || 'Failed to fetch orders', 'error');
-        setLoading(false);
-    });
-}, []); // The dependency array is now empty
+
+    useEffect(() => {
+        axios.get(`${API_BASE_URL}/admin/orders`)
+            .then(response => {
+                if (response.data.status === 1) {
+                    setOrders(response.data.orders);
+                } else {
+                    openToast(response.data.msg, 'error');
+                }
+                setLoading(false);
+            })
+            .catch(error => {
+                openToast(error.response?.data?.msg || 'Failed to fetch orders', 'error');
+                setLoading(false);
+            });
+    }, [API_BASE_URL, openToast]);
 
     const getStatusBadge = (status) => {
         switch (status) {

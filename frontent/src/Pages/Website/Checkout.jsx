@@ -10,13 +10,11 @@ const Checkout = () => {
     const [Razorpay] = useRazorpay();
     const { products, productImageUrl, API_BASE_URL, fetchProduct, CART_ORDER_URL } = useContext(Context);
     
-    // Selectors and Hooks
     const user = useSelector(store => store.user);
     const cart = useSelector(store => store.cart);
     const navigator = useNavigate();
     const dispatcher = useDispatch();
 
-    // State Management
     const [cartProduct, setCartProduct] = useState([]);
     const [formData, setFormData] = useState({
         first_name: '',
@@ -32,7 +30,6 @@ const Checkout = () => {
     });
     const [processing, setProcessing] = useState(false);
 
-    // Effect to pre-fill form data from Redux store
     useEffect(() => {
         if (user.data) {
             setFormData(prev => ({
@@ -48,12 +45,11 @@ const Checkout = () => {
         }
     }, [user.data]);
 
-    // Effect to fetch products on component mount
+    // FIX: Added 'fetchProduct' to the dependency array.
     useEffect(() => {
         fetchProduct();
-    }, []);
+    }, [fetchProduct]);
 
-    // Effect to combine cart and product data
     useEffect(() => {
         if (products.length > 0 && cart.data.length > 0) {
             const data = products.flatMap(p =>
@@ -67,7 +63,6 @@ const Checkout = () => {
         }
     }, [cart.data, products]);
 
-    // Handlers
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -180,7 +175,6 @@ const Checkout = () => {
                         <h2 className="text-2xl font-semibold mb-6 border-b pb-4">Shipping Details</h2>
                         <div className="space-y-4">
                             {/* Input fields... */}
-                            {/* Full Name */}
                              <div>
                                 <label className="block text-sm font-medium mb-1">Full Name</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -188,7 +182,6 @@ const Checkout = () => {
                                     <input className="input-style" placeholder="Last Name" type="text" required name='last_name' value={formData.last_name} onChange={handleInputChange} />
                                 </div>
                             </div>
-                            {/* Address */}
                             <div>
                                 <label className="block text-sm font-medium mb-1">Address</label>
                                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2'>
@@ -201,7 +194,6 @@ const Checkout = () => {
                                     <input className="input-style" placeholder="PIN Code" type="number" name='pin' required value={formData.pin} onChange={handleInputChange} minLength={6} maxLength={6} />
                                 </div>
                             </div>
-                            {/* Contact */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Phone Number</label>
@@ -212,7 +204,6 @@ const Checkout = () => {
                                     <input required className="input-style" placeholder="example@email.com" type="email" name='email' value={formData.email} onChange={handleInputChange} />
                                 </div>
                             </div>
-                            {/* Payment Mode */}
                             <div>
                                 <h2 className="block text-lg font-medium py-2 mt-4 border-b">Mode of Payment</h2>
                                 <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:gap-10">
@@ -262,6 +253,6 @@ const Checkout = () => {
             </div>
         </div>
     );
-}
+};
 
 export default Checkout;

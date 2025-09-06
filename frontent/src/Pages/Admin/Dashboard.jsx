@@ -1,22 +1,16 @@
-// Dashboard.jsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiDollarSign, FiShoppingCart, FiUsers, FiBarChart2 } from 'react-icons/fi';
-// A popular charting library - you need to install it: npm install recharts
+// FIX: Removed unused 'FiBarChart2' icon from imports
+import { FiDollarSign, FiShoppingCart, FiUsers } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Reusable StatCard component (no changes needed here)
-const StatCard = ({ icon, title, value, change, changeType }) => {
+const StatCard = ({ icon, title, value }) => {
     return (
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
             <div>
                 <p className="text-sm font-medium text-gray-500">{title}</p>
                 <p className="text-3xl font-bold text-gray-800">{value}</p>
-                {/* Optional: Add logic for dynamic change later */}
-                {/* <p className={`text-sm mt-1 ${changeType === 'increase' ? 'text-green-500' : 'text-red-500'}`}>
-                    {change}
-                </p> */}
             </div>
             <div className="bg-indigo-500 text-white rounded-full p-4">
                 {icon}
@@ -26,19 +20,16 @@ const StatCard = ({ icon, title, value, change, changeType }) => {
 };
 
 const Dashboard = () => {
-    // State to hold our data
     const [stats, setStats] = useState(null);
     const [recentOrders, setRecentOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Your API base URL
-    const API_BASE_URL = 'https://i-shop-e-commerce-backend.vercel.app/admin'; // Adjust if your URL is different
+    const API_BASE_URL = 'https://i-shop-e-commerce-backend.vercel.app/admin';
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Use Promise.all to fetch stats and orders in parallel
                 const [statsResponse, ordersResponse] = await Promise.all([
                     axios.get(`${API_BASE_URL}/stats`),
                     axios.get(`${API_BASE_URL}/orders`)
@@ -49,7 +40,6 @@ const Dashboard = () => {
                 }
                 
                 if (ordersResponse.data.status === 1) {
-                    // Get only the 5 most recent orders for the dashboard
                     setRecentOrders(ordersResponse.data.orders.slice(0, 5));
                 }
                 
@@ -62,19 +52,16 @@ const Dashboard = () => {
         };
 
         fetchData();
-    }, []);
+    }, []); // API_BASE_URL is a constant, so it's okay to omit it from deps if it never changes.
 
-    // Display a loading state
     if (loading) {
         return <div className="text-center p-10">Loading Dashboard...</div>;
     }
 
-    // Display an error state
     if (error) {
         return <div className="text-center p-10 text-red-500">{error}</div>;
     }
 
-    // Order status mapping for display
     const getOrderStatus = (status) => {
         switch (status) {
             case 1: return { text: 'Pending', style: 'bg-yellow-100 text-yellow-800' };
@@ -88,7 +75,6 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-8">
-            {/* Stat Cards Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard 
                     icon={<FiDollarSign size={24} />} 
@@ -107,7 +93,6 @@ const Dashboard = () => {
                 />
             </div>
 
-            {/* Sales Chart Section */}
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-semibold text-gray-800 mb-4">Sales Overview (Last 7 Days)</h3>
                 <div style={{ height: '400px' }}>
@@ -124,8 +109,7 @@ const Dashboard = () => {
                 </div>
             </div>
             
-             {/* Recent Orders Table */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
+             <div className="bg-white p-6 rounded-lg shadow-md">
                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Orders</h3>
                  <div className="overflow-x-auto">
                     <table className="w-full text-left">

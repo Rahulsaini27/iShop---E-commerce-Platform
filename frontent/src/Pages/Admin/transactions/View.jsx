@@ -1,31 +1,29 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Context } from '../../../Context/MainContext';
-import { useSelector } from 'react-redux';
 
 const ViewTransactions = () => {
     const { API_BASE_URL, openToast } = useContext(Context);
-    const { token } = useSelector(store => store.user);
+
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
+
     useEffect(() => {
-        axios.get(`${API_BASE_URL}/admin/transactions`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(response => {
-            if (response.data.status === 1) {
-                setTransactions(response.data.transactions);
-            } else {
-                openToast(response.data.msg, 'error');
-            }
-            setLoading(false);
-        })
-        .catch(error => {
-            openToast(error.response?.data?.msg || 'Failed to fetch transactions', 'error');
-            setLoading(false);
-        });
-    }, [token]);
+        axios.get(`${API_BASE_URL}/admin/transactions`)
+            .then(response => {
+                if (response.data.status === 1) {
+                    setTransactions(response.data.transactions);
+                } else {
+                    openToast(response.data.msg, 'error');
+                }
+                setLoading(false);
+            })
+            .catch(error => {
+                openToast(error.response?.data?.msg || 'Failed to fetch transactions', 'error');
+                setLoading(false);
+            });
+    }, [API_BASE_URL, openToast]);
 
     if (loading) return <p>Loading transactions...</p>;
 

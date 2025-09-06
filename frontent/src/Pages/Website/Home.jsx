@@ -14,7 +14,7 @@ const Home = () => {
     useEffect(() => {
         fetchCategory();
         fetchProduct();
-    }, []);
+    }, [fetchCategory, fetchProduct]);
 
     useEffect(() => {
         if (selCat !== 0) {

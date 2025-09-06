@@ -14,9 +14,10 @@ const Cart = () => {
     const dispatcher = useDispatch();
     const { products, productImageUrl, API_BASE_URL, fetchProduct, CART_BASE_URL } = useContext(Context);
 
+
     useEffect(() => {
         fetchProduct();
-    }, []);
+    }, [fetchProduct]);
 
     const cartProduct = products
         .map(p => {
@@ -26,7 +27,7 @@ const Cart = () => {
         .filter(item => item !== null);
 
     const updateDbCart = (pId, newQty) => {
-        if (user.data != null && newQty > 0) {
+        if (user.data !== null && newQty > 0) {
             axios.put(`${API_BASE_URL}${CART_BASE_URL}/change-quantity`, {
                 user_id: user.data._id, pId, newQty
             });
@@ -34,7 +35,7 @@ const Cart = () => {
     };
 
     const removeFromDbCart = (pId) => {
-        if (user.data != null) {
+        if (user.data !== null) {
             axios.post(`${API_BASE_URL}${CART_BASE_URL}/remove-from-cart`, {
                 user_id: user.data._id, pId
             });
@@ -64,7 +65,8 @@ const Cart = () => {
     };
 
     const checkout = () => {
-        navigator(user.data == null ? "/login" : "/checkout");
+
+        navigator(user.data === null ? "/login" : "/checkout");
     };
 
     if (cart.data.length === 0) {
@@ -100,7 +102,7 @@ const Cart = () => {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <p className="font-semibold">{pro.name}</p>
-                                                <p className="text-xs text-gray-500">{pro.category_id.name} · {pro.color.name}</p>
+                                                <p className="text-xs text-gray-500">{pro.category_id.name} · {pro.color[0]?.name}</p>
                                             </div>
                                             <IoIosCloseCircle onClick={() => handleRemoveFromCart(pro)} className='text-2xl text-red-600 cursor-pointer' />
                                         </div>
@@ -137,7 +139,7 @@ const Cart = () => {
                                         <img src={API_BASE_URL + productImageUrl + pro.image} alt={pro.name} className='w-20 h-20 object-cover rounded-md' />
                                         <div>
                                             <p className="font-semibold">{pro.name}</p>
-                                            <p className="text-xs text-gray-500">{pro.category_id.name} · {pro.color.name}</p>
+                                            <p className="text-xs text-gray-500">{pro.category_id.name} · {pro.color[0]?.name}</p>
                                         </div>
                                     </td>
                                     <td className='px-4 py-4'>₹ {pro.discount_price}</td>

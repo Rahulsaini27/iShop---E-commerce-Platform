@@ -10,6 +10,7 @@ const ThankYou = () => {
     const { API_BASE_URL, CART_ORDER_URL, productImageUrl } = useContext(Context);
     const [order, setOrder] = useState(null);
 
+
     useEffect(() => {
         if (order_id) {
             axios.get(`${API_BASE_URL}${CART_ORDER_URL}/${order_id}`)
@@ -20,7 +21,7 @@ const ThankYou = () => {
                 })
                 .catch((err) => console.error("Failed to fetch order:", err));
         }
-    }, [order_id]);
+    }, [order_id, API_BASE_URL, CART_ORDER_URL]);
 
     if (!order) {
         return <div className="text-center p-10">Loading your order details...</div>;
@@ -86,6 +87,6 @@ const ThankYou = () => {
             </div>
         </div>
     );
-}
+};
 
 export default ThankYou;
